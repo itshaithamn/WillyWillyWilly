@@ -1,16 +1,14 @@
-# This is a sample Python script.
+from freewili.usb_util import find_all, USB_VID_FW_FTDI, USB_PID_FW_FTDI, USB_VID_FW_RPI
+import usb.core
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+# Find all FTDI processors
+ftdi_devices = find_all(vid=USB_VID_FW_FTDI, pid=USB_PID_FW_FTDI)
+print(f"Found {len(ftdi_devices)} FTDI FreeWili(s)")
+for device in ftdi_devices:
+    print(device)
 
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+# Find all RPi processors
+rpi_devices = find_all(vid=USB_VID_FW_RPI)
+print(f"Found {len(rpi_devices)} RPi FreeWili Processor(s)")
+for device in rpi_devices:
+    print(device)
