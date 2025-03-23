@@ -1,0 +1,91 @@
+#include <ESP8266WiFi.h>
+
+const char* ssid = "ESP8266_AP";
+const char* password = "12345678";
+
+WiFiServer telnetServer(23);
+WiFiClient telnetClient;
+const int ledPin = 2;  // Built-in LED (GPIO2)
+
+unsigned long lastCheckTime = 0;  // Time tracker for checking connected clients
+const unsigned long checkInterval = 10000;  // Check every 10 seconds
+
+void setup() {
+    pinMode(ledPin, OUTPUT);
+    digitalWrite(ledPin, HIGH);  // LED off initially
+
+    Serial.begin(115200);
+    WiFi.softAP(ssid, password);
+    Serial.println("Access Point Started. IP: " + WiFi.softAPIP().toString());
+
+    telnetServer.begin();
+    Serial.println("Telnet server started on port 23.");
+}
+
+void handleCommand(String cmd) {
+    cmd.trim();  // Remove whitespace/newlines
+
+    if (cmd == "") {  // Empty command (ping)
+        Serial.println("[PING] Client sent an empty message.");
+        telnetClient.println("[PING] Received empty command.");
+    } else if (cmd == "LED ON") {
+        digitalWrite(ledPin, LOW);
+        Serial.println("[COMMAND] LED turned ON.");
+        telnetClient.println("[OK] LED turned ON.");
+    } else if (cmd == "LED OFF") {
+        digitalWrite(ledPin, HIGH);
+        Serial.println("[COMMAND] LED turned OFF.");
+        telnetClient.println("[OK] LED turned OFF.");
+    } else if (cmd == "STATUS") {
+        String status = (digitalRead(ledPin) == LOW) ? "ON" : "OFF";
+        Serial.println("[COMMAND] Status requested. LED is " + status);
+        telnetClient.println("[STATUS] LED is " + status);
+    } else {
+        Serial.println("[ERROR] Unknown command: " + cmd);
+        telnetClient.println("[ERROR] Unknown command: " + cmd);
+    }
+}
+
+void loop() {
+    // Check for new client connections to Telnet server
+    if (telnetServer.hasClient()) {
+        if (telnetClient) {
+            Serial.println("[DISCONNECT] Previous client disconnected.");
+            telnetClient.stop();
+        }
+        telnetClient = telnetServer.available();
+        Serial.println("[CONNECT] New Telnet client connected.");
+        telnetClient.println("[WELCOME] Connected to ESP8266 Telnet Server.");
+
+    }
+    if (telnetClient && telnetClient.connected()) {
+      String command = "";
+      while (telnetClient.available()) {
+          char c = telnetClient.read();
+          if (c == '\n' || c == '\r') {  // End of command
+              if (command.length() > 0) {
+                  handleCommand(command);
+                  command = "";
+              } else {
+                  telnetClient.println("[PING] Still here!");
+                  Serial.print("Free Heap: ");
+                  Serial.println(ESP.getFreeHeap());
+              }
+          } else {
+              command += c;
+          }
+
+      }
+    }
+    // Check the number of connected clients to the AP periodically
+    if (millis() - lastCheckTime > checkInterval) {
+        lastCheckTime = millis();
+        int connectedClients = WiFi.softAPgetStationNum();
+        
+        // If a new client has connected
+        if (connectedClients > 0) {
+            Serial.println("[ALERT] New client connected to AP.");
+        }
+    }
+
+}
