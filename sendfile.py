@@ -1,11 +1,14 @@
+from pathlib import Path
+
 import freewili
 from freewili.serial_util import find_all
 from freewili.types import FreeWiliProcessorType
 
 # Find the first Main Processor.
-first_device = freewili.find_all(FreeWiliProcessorType.MainUF2)[0]
+first_device = freewili.serial_util.find_all(FreeWiliProcessorType.Display)[0]
 # Send the file to the Main Processor.
-first_device.send_file("willy.wav", "/sounds/willy.wav").unwrap()
+file_path = Path("./willy.wav")
+first_device.send_file(file_path, "/sounds/willy.wav").unwrap()
 
 # #    from freewili.serial_util import find_all
 #     from freewili.types import FreeWiliProcessorType
